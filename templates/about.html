@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+
+{% block title %}About Project - FraudGuard AI{% endblock %}
+{% block header_title %}Project Documentation & Architecture{% endblock %}
+
+{% block content %}
+
+<!-- Hero Banner -->
+<div class="cyber-card mb-4" style="background: linear-gradient(135deg, #131b2e 0%, #1e2640 100%);">
+    <div class="row align-items-center g-4">
+        <div class="col-lg-8">
+            <span class="badge bg-primary-subtle text-primary mb-2">College Mini-Project Demonstration</span>
+            <h2 class="text-white fw-bold mb-2">
+                AI-Based Credit Card Fraud Detection &amp; Prevention System
+            </h2>
+            <p class="text-muted mb-3" style="line-height: 1.6;">
+                An intelligent cybersecurity platform utilizing supervised machine learning to detect fraudulent financial transactions, 
+                quantify transaction risk probabilities, provide explainable AI reasoning for flagged incidents, and recommend 
+                proactive fraud prevention security protocols.
+            </p>
+            <div class="d-flex flex-wrap gap-2">
+                <span class="badge bg-dark border border-secondary text-dim"><i class="fab fa-python me-1 text-primary"></i> Python 3.14</span>
+                <span class="badge bg-dark border border-secondary text-dim"><i class="fas fa-server me-1 text-info"></i> Flask Backend</span>
+                <span class="badge bg-dark border border-secondary text-dim"><i class="fas fa-brain me-1 text-warning"></i> Scikit-Learn</span>
+                <span class="badge bg-dark border border-secondary text-dim"><i class="fas fa-chart-line me-1 text-success"></i> Chart.js</span>
+            </div>
+        </div>
+        <div class="col-lg-4 text-center">
+            <div class="p-4 rounded-4" style="background: rgba(11, 15, 25, 0.6); border: 1px solid #23304d;">
+                <div class="brand-icon mx-auto mb-3" style="width: 54px; height: 54px; font-size: 1.5rem;">
+                    <i class="fas fa-shield-halved"></i>
+                </div>
+                <h5 class="text-white fw-bold mb-1">FraudGuard AI</h5>
+                <p class="text-dim small mb-0">Version 1.0 &bull; Release 2026</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Project Overview & Objectives -->
+<div class="row g-4 mb-4">
+    <!-- Objectives -->
+    <div class="col-lg-6">
+        <div class="cyber-card h-100">
+            <div class="cyber-card-header">
+                <div class="cyber-card-title">
+                    <i class="fas fa-bullseye"></i>
+                    <span>Project Objectives</span>
+                </div>
+            </div>
+            <ul class="list-unstyled d-flex flex-column gap-3 mb-0">
+                <li class="d-flex align-items-start gap-3">
+                    <div class="p-2 rounded bg-success-subtle text-success small mt-1">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div>
+                        <strong class="text-white d-block">Detect Fraudulent Transactions</strong>
+                        <span class="text-muted small">Identify anomalous, unauthorized credit card activities from transaction streams with high recall and precision.</span>
+                    </div>
+                </li>
+                <li class="d-flex align-items-start gap-3">
+                    <div class="p-2 rounded bg-primary-subtle text-primary small mt-1">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div>
+                        <strong class="text-white d-block">Distinguish Genuine vs Fraudulent Patterns</strong>
+                        <span class="text-muted small">Accurately separate everyday legitimate cardholder purchases from fraudulent vectors without generating excessive false declines.</span>
+                    </div>
+                </li>
+                <li class="d-flex align-items-start gap-3">
+                    <div class="p-2 rounded bg-info-subtle text-info small mt-1">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div>
+                        <strong class="text-white d-block">Analyse Suspicious Behavioral Patterns</strong>
+                        <span class="text-muted small">Evaluate transaction amounts, velocity spikes, and PCA feature deviations characteristic of card fraud.</span>
+                    </div>
+                </li>
+                <li class="d-flex align-items-start gap-3">
+                    <div class="p-2 rounded bg-warning-subtle text-warning small mt-1">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div>
+                        <strong class="text-white d-block">Visualize Fraud Statistics &amp; Metrics</strong>
+                        <span class="text-muted small">Deliver comprehensive fintech analytics through doughnut charts, timeline breakdowns, and confusion matrices.</span>
+                    </div>
+                </li>
+                <li class="d-flex align-items-start gap-3">
+                    <div class="p-2 rounded bg-danger-subtle text-danger small mt-1">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div>
+                        <strong class="text-white d-block">Recommend Preventive Security Measures</strong>
+                        <span class="text-muted small">Provide practical cybersecurity directives (MFA, velocity limits, geofencing, card freezing) for institutions.</span>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Technologies Used -->
+    <div class="col-lg-6">
+        <div class="cyber-card h-100">
+            <div class="cyber-card-header">
+                <div class="cyber-card-title">
+                    <i class="fas fa-code"></i>
+                    <span>Technologies &amp; Architecture</span>
+                </div>
+            </div>
+
+            <div class="row g-3">
+                <div class="col-6">
+                    <div class="p-3 rounded-3" style="background-color: #0f172a; border: 1px solid #1e293b;">
+                        <div class="text-info fw-bold small mb-1"><i class="fab fa-python me-1"></i> Python &amp; Flask</div>
+                        <p class="text-dim small mb-0">Microframework powering REST endpoints, template rendering, and session handling.</p>
+                    </div>
+                </div>
+
+                <div class="col-6">
+                    <div class="p-3 rounded-3" style="background-color: #0f172a; border: 1px solid #1e293b;">
+                        <div class="text-warning fw-bold small mb-1"><i class="fas fa-brain me-1"></i> Scikit-Learn</div>
+                        <p class="text-dim small mb-0">Random Forest Classifier, Logistic Regression, train/test splitting, and evaluation metrics.</p>
+                    </div>
+                </div>
+
+                <div class="col-6">
+                    <div class="p-3 rounded-3" style="background-color: #0f172a; border: 1px solid #1e293b;">
+                        <div class="text-success fw-bold small mb-1"><i class="fas fa-table me-1"></i> Pandas &amp; NumPy</div>
+                        <p class="text-dim small mb-0">Tabular data manipulation, schema validation, median imputation, and matrix math.</p>
+                    </div>
+                </div>
+
+                <div class="col-6">
+                    <div class="p-3 rounded-3" style="background-color: #0f172a; border: 1px solid #1e293b;">
+                        <div class="text-primary fw-bold small mb-1"><i class="fas fa-chart-pie me-1"></i> Chart.js</div>
+                        <p class="text-dim small mb-0">Interactive client-side charting for distribution doughnuts and activity timelines.</p>
+                    </div>
+                </div>
+
+                <div class="col-6">
+                    <div class="p-3 rounded-3" style="background-color: #0f172a; border: 1px solid #1e293b;">
+                        <div class="text-danger fw-bold small mb-1"><i class="fas fa-file-shield me-1"></i> Joblib Serialization</div>
+                        <p class="text-dim small mb-0">Persistence of trained model pipelines, feature scalers, and metadata.</p>
+                    </div>
+                </div>
+
+                <div class="col-6">
+                    <div class="p-3 rounded-3" style="background-color: #0f172a; border: 1px solid #1e293b;">
+                        <div class="text-light fw-bold small mb-1"><i class="fab fa-bootstrap me-1"></i> Bootstrap 5 &amp; CSS3</div>
+                        <p class="text-dim small mb-0">Dark fintech cybersecurity dashboard theme with responsive layouts.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Architecture Pipeline Flowchart -->
+<div class="cyber-card mb-4">
+    <div class="cyber-card-header">
+        <div class="cyber-card-title">
+            <i class="fas fa-diagram-project"></i>
+            <span>Machine Learning Pipeline Workflow</span>
+        </div>
+        <span class="badge bg-secondary-subtle text-secondary small">End-to-End Architecture</span>
+    </div>
+
+    <div class="row g-3 text-center">
+        <div class="col-md">
+            <div class="p-3 rounded-3" style="background-color: #0f172a; border: 1px solid #1e293b;">
+                <div class="text-primary fs-4 mb-2"><i class="fas fa-file-csv"></i></div>
+                <div class="text-white fw-bold small">1. Data Ingestion</div>
+                <div class="text-dim small mt-1">Upload CSV; Kaggle schema check; missing value imputation</div>
+            </div>
+        </div>
+        <div class="col-md-auto d-none d-md-flex align-items-center text-dim">
+            <i class="fas fa-arrow-right"></i>
+        </div>
+        <div class="col-md">
+            <div class="p-3 rounded-3" style="background-color: #0f172a; border: 1px solid #1e293b;">
+                <div class="text-info fs-4 mb-2"><i class="fas fa-sliders"></i></div>
+                <div class="text-white fw-bold small">2. Feature Scaling</div>
+                <div class="text-dim small mt-1">RobustScaler on Amount; align PCA components V1 to V28</div>
+            </div>
+        </div>
+        <div class="col-md-auto d-none d-md-flex align-items-center text-dim">
+            <i class="fas fa-arrow-right"></i>
+        </div>
+        <div class="col-md">
+            <div class="p-3 rounded-3" style="background-color: #0f172a; border: 1px solid #1e293b;">
+                <div class="text-warning fs-4 mb-2"><i class="fas fa-tree"></i></div>
+                <div class="text-white fw-bold small">3. Model Training</div>
+                <div class="text-dim small mt-1">Random Forest with balanced class weighting; 75/25 split</div>
+            </div>
+        </div>
+        <div class="col-md-auto d-none d-md-flex align-items-center text-dim">
+            <i class="fas fa-arrow-right"></i>
+        </div>
+        <div class="col-md">
+            <div class="p-3 rounded-3" style="background-color: #0f172a; border: 1px solid #1e293b;">
+                <div class="text-success fs-4 mb-2"><i class="fas fa-gauge-high"></i></div>
+                <div class="text-white fw-bold small">4. Scoring &amp; XAI</div>
+                <div class="text-dim small mt-1">Fraud probability, risk tiers (Low/Med/High), feature deviation</div>
+            </div>
+        </div>
+        <div class="col-md-auto d-none d-md-flex align-items-center text-dim">
+            <i class="fas fa-arrow-right"></i>
+        </div>
+        <div class="col-md">
+            <div class="p-3 rounded-3" style="background-color: #0f172a; border: 1px solid #1e293b;">
+                <div class="text-danger fs-4 mb-2"><i class="fas fa-shield-halved"></i></div>
+                <div class="text-white fw-bold small">5. Prevention</div>
+                <div class="text-dim small mt-1">Directives for holds, step-up MFA, and velocity controls</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Academic Information -->
+<div class="cyber-card">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div>
+            <div class="text-white fw-bold">Academic Mini-Project Submission</div>
+            <div class="text-dim small">Bachelor of Technology (B.Tech) &bull; Computer Science &amp; Engineering</div>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('dashboard') }}" class="btn btn-cyber-primary btn-sm">
+                <i class="fas fa-house me-1"></i> Open Dashboard
+            </a>
+            <a href="{{ url_for('download_sample_dataset') }}" class="btn btn-cyber-secondary btn-sm">
+                <i class="fas fa-download me-1"></i> Sample CSV
+            </a>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

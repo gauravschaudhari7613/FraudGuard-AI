@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+
+{% block title %}Fraud Detection - FraudGuard AI{% endblock %}
+{% block header_title %}Transaction Risk Detection & Scoring{% endblock %}
+
+{% block content %}
+{% if not has_data %}
+<div class="cyber-card empty-state">
+    <div class="empty-state-icon">
+        <i class="fas fa-microchip"></i>
+    </div>
+    <h3 class="text-white fw-bold mb-2">No Transactions Available for Detection</h3>
+    <p class="text-muted mx-auto mb-4" style="max-width: 520px;">
+        Load the sample credit card dataset or upload a new CSV file to trigger machine learning fraud classification.
+    </p>
+    <div class="d-flex justify-content-center gap-3">
+        <form action="{{ url_for('load_sample_dataset') }}" method="POST">
+            <button type="submit" class="btn btn-cyber-primary">
+                <i class="fas fa-play me-2"></i> Load Demo / Sample Dataset
+            </button>
+        </form>
+        <a href="{{ url_for('dataset_management') }}" class="btn btn-cyber-secondary">
+            <i class="fas fa-upload me-2"></i> Upload Custom CSV
+        </a>
+    </div>
+</div>
+{% else %}
+
+<!-- Detection Overview & Filter Toolbar -->
+<div class="cyber-card mb-4">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+        <!-- Filter Tabs -->
+        <div class="d-flex flex-wrap gap-2">
+            <a href="{{ url_for('fraud_detection', filter='all', q=search_query) }}" class="btn btn-sm {% if current_filter == 'all' %}btn-cyber-primary{% else %}btn-cyber-secondary{% endif %}">
+                <span>All Transactions</span>
+                <span class="badge bg-dark ms-1">{{ summary.total_transactions }}</span>
+            </a>
+            <a href="{{ url_for('fraud_detection', filter='fraud', q=search_query) }}" class="btn btn-sm {% if current_filter == 'fraud' %}btn-cyber-primary{% else %}btn-cyber-secondary{% endif %}">
+                <i class="fas fa-triangle-exclamation text-danger me-1"></i>
+                <span>Fraudulent Only</span>
+                <span class="badge bg-danger ms-1">{{ summary.fraud_count }}</span>
+            </a>
+            <a href="{{ url_for('fraud_detection', filter='high_risk', q=search_query) }}" class="btn btn-sm {% if current_filter == 'high_risk' %}btn-cyber-primary{% else %}btn-cyber-secondary{% endif %}">
+                <i class="fas fa-shield-xmark text-danger me-1"></i>
+                <span>High Risk (>70%)</span>
+                <span class="badge bg-dark ms-1">{{ summary.high_risk_count }}</span>
+            </a>
+            <a href="{{ url_for('fraud_detection', filter='medium_risk', q=search_query) }}" class="btn btn-sm {% if current_filter == 'medium_risk' %}btn-cyber-primary{% else %}btn-cyber-secondary{% endif %}">
+                <i class="fas fa-triangle-exclamation text-warning me-1"></i>
+                <span>Medium Risk (35-70%)</span>
+                <span class="badge bg-dark ms-1">{{ summary.med_risk_count }}</span>
+            </a>
+            <a href="{{ url_for('fraud_detection', filter='genuine', q=search_query) }}" class="btn btn-sm {% if current_filter == 'genuine' %}btn-cyber-primary{% else %}btn-cyber-secondary{% endif %}">
+                <i class="fas fa-check-circle text-success me-1"></i>
+                <span>Genuine Only</span>
+                <span class="badge bg-success ms-1">{{ summary.genuine_count }}</span>
+            </a>
+        </div>
+
+        <!-- Actions: Search, Export, Test -->
+        <div class="d-flex flex-wrap align-items-center gap-2">
+            <!-- Search Form -->
+            <form action="{{ url_for('fraud_detection') }}" method="GET" class="d-flex align-items-center">
+                <input type="hidden" name="filter" value="{{ current_filter }}">
+                <div class="input-group input-group-sm">
+                    <input type="text" name="q" class="form-cyber-input form-control-sm" placeholder="Search TX or Amount..." value="{{ search_query }}">
+                    <button type="submit" class="btn btn-cyber-secondary btn-sm">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </form>
+
+            <!-- Export Results CSV -->
+            <a href="{{ url_for('export_predictions_csv') }}" class="btn btn-cyber-secondary btn-sm" title="Download predictions CSV">
+                <i class="fas fa-file-export me-1 text-info"></i>
+                <span>Export CSV</span>
+            </a>
+
+            <!-- Single Test Button -->
+            <button type="button" class="btn btn-cyber-primary btn-sm" data-bs-toggle="modal" data-bs-target="#singleTxModal">
+                <i class="fas fa-bolt me-1"></i>
+                <span>Live Test</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Detection Results Table -->
+<div class="cyber-card">
+    <div class="cyber-card-header">
+        <div class="cyber-card-title">
+            <i class="fas fa-list-check"></i>
+            <span>Evaluated Transactions</span>
+        </div>
+        <span class="text-dim small">
+            Displaying {{ records|length }} of {{ total_matches }} matching records
+            {% if total_matches > records|length %}(top 200 shown for speed){% endif %}
+        </span>
+    </div>
+
+    {% if records %}
+    <div class="table-responsive">
+        <table class="table-cyber text-nowrap">
+            <thead>
+                <tr>
+                    <th>Transaction ID</th>
+                    <th>Time (s)</th>
+                    <th>Amount ($)</th>
+                    {% if records[0].Actual_Label != 'Unknown' %}
+                    <th>Actual Ground Truth</th>
+                    {% endif %}
+                    <th>AI Classification</th>
+                    <th>Fraud Probability</th>
+                    <th>Risk Category</th>
+                    <th class="text-end">Investigation</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for tx in records %}
+                <tr style="{% if tx.Predicted_Class == 1 %}background-color: rgba(239, 68, 68, 0.04);{% endif %}">
+                    <td class="fw-semibold text-white">
+                        <i class="fas fa-hashtag text-dim me-1"></i>
+                        {{ tx.Transaction_ID }}
+                    </td>
+                    <td class="text-muted">{{ tx.Time }}</td>
+                    <td class="fw-bold text-white">${{ "%.2f"|format(tx.Amount) }}</td>
+                    
+                    {% if tx.Actual_Label != 'Unknown' %}
+                    <td>
+                        {% if tx.Actual_Class == 1 %}
+                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle small">Fraud (1)</span>
+                        {% else %}
+                        <span class="badge bg-success-subtle text-success border border-success-subtle small">Genuine (0)</span>
+                        {% endif %}
+                    </td>
+                    {% endif %}
+
+                    <td>
+                        {% if tx.Predicted_Class == 1 %}
+                        <span class="badge-prediction fraud">
+                            <i class="fas fa-circle-exclamation"></i>
+                            Fraudulent
+                        </span>
+                        {% else %}
+                        <span class="badge-prediction genuine">
+                            <i class="fas fa-check-circle"></i>
+                            Genuine
+                        </span>
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        <div class="d-flex align-items-center gap-2" style="min-width: 140px;">
+                            <div class="progress flex-grow-1" style="height: 6px; background-color: #1e293b;">
+                                <div class="progress-bar {% if tx.Risk_Level == 'High Risk' %}bg-danger{% elif tx.Risk_Level == 'Medium Risk' %}bg-warning{% else %}bg-success{% endif %}" 
+                                     style="width: {{ tx.Fraud_Probability_Pct }}%;"></div>
+                            </div>
+                            <span class="small fw-semibold text-white">{{ tx.Fraud_Probability_Pct }}%</span>
+                        </div>
+                    </td>
+
+                    <td>
+                        {% if tx.Risk_Level == 'High Risk' %}
+                        <span class="badge-risk high"><i class="fas fa-shield-xmark"></i> High Risk</span>
+                        {% elif tx.Risk_Level == 'Medium Risk' %}
+                        <span class="badge-risk medium"><i class="fas fa-triangle-exclamation"></i> Medium Risk</span>
+                        {% else %}
+                        <span class="badge-risk low"><i class="fas fa-shield-check"></i> Low Risk</span>
+                        {% endif %}
+                    </td>
+
+                    <td class="text-end">
+                        <a href="{{ url_for('transaction_details', row_index=tx.Row_Index) }}" class="btn btn-cyber-secondary btn-sm py-1 px-2">
+                            <span>Explain</span>
+                            <i class="fas fa-arrow-right ms-1"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="text-center py-5 text-muted">
+        <i class="fas fa-magnifying-glass fs-2 mb-2 text-dim"></i>
+        <div class="fw-semibold">No transactions found matching your criteria.</div>
+        <p class="small text-dim mt-1">Try resetting the filter tabs or clearing the search query.</p>
+        <a href="{{ url_for('fraud_detection') }}" class="btn btn-cyber-secondary btn-sm mt-2">Reset Filters</a>
+    </div>
+    {% endif %}
+</div>
+
+{% endif %}
+{% endblock %}

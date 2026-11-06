@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+
+{% block title %}Dataset Management - FraudGuard AI{% endblock %}
+{% block header_title %}Dataset Management & Ingestion{% endblock %}
+
+{% block content %}
+
+<!-- Upload & Actions Card -->
+<div class="row g-4 mb-4">
+    <!-- Left: Upload Form -->
+    <div class="col-lg-7">
+        <div class="cyber-card h-100">
+            <div class="cyber-card-header">
+                <div class="cyber-card-title">
+                    <i class="fas fa-cloud-arrow-up"></i>
+                    <span>Upload Credit Card Transaction Dataset</span>
+                </div>
+                <span class="badge bg-secondary-subtle text-secondary">CSV Format</span>
+            </div>
+
+            <form action="{{ url_for('upload_dataset') }}" method="POST" enctype="multipart/form-data" class="mb-3">
+                <div class="p-4 rounded-3 text-center mb-3" style="background-color: #0f172a; border: 2px dashed #2a3b5c;">
+                    <i class="fas fa-file-csv fs-1 text-primary mb-2"></i>
+                    <h6 class="text-white fw-bold mb-1">Select or Drop CSV Dataset</h6>
+                    <p class="text-muted small mb-3">
+                        Compatible with standard Kaggle format (<code>Time</code>, <code>V1</code>–<code>V28</code>, <code>Amount</code>, <code>Class</code>).
+                    </p>
+                    <input type="file" name="dataset_file" id="dataset_file" class="d-none" accept=".csv" onchange="document.getElementById('fileNameLabel').textContent = this.files[0] ? this.files[0].name : ''; document.getElementById('btnSubmitUpload').classList.remove('d-none');">
+                    <button type="button" class="btn btn-cyber-secondary btn-sm" onclick="document.getElementById('dataset_file').click();">
+                        <i class="fas fa-folder-open me-2"></i> Browse Computer
+                    </button>
+                    <div id="fileNameLabel" class="text-info small mt-2 fw-semibold"></div>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2">
+                    <button type="submit" id="btnSubmitUpload" class="btn btn-cyber-primary d-none">
+                        <i class="fas fa-upload me-2"></i> Ingest & Validate File
+                    </button>
+                </div>
+            </form>
+
+            <div class="d-flex flex-wrap align-items-center justify-content-between pt-3 border-top border-secondary-subtle gap-2">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="text-dim small">Need test data?</span>
+                    <a href="{{ url_for('download_sample_dataset') }}" class="btn btn-cyber-secondary btn-sm py-1">
+                        <i class="fas fa-download me-1 text-info"></i> Download Sample CSV
+                    </a>
+                </div>
+                <form action="{{ url_for('load_sample_dataset') }}" method="POST">
+                    <button type="submit" class="btn btn-sm btn-outline-info">
+                        <i class="fas fa-rotate-left me-1"></i> Reset to Default Sample
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right: Model Training & Quick Status -->
+    <div class="col-lg-5">
+        <div class="cyber-card h-100 d-flex flex-direction-column justify-content-between">
+            <div>
+                <div class="cyber-card-header">
+                    <div class="cyber-card-title">
+                        <i class="fas fa-brain"></i>
+                        <span>Model Pipeline & Training</span>
+                    </div>
+                    <span class="badge bg-success-subtle text-success">Supervised Learning</span>
+                </div>
+
+                <p class="text-muted small mb-3">
+                    Train the <strong>Random Forest Classifier</strong> directly on the active dataset using stratified sampling (75/25 split) and balanced class weighting.
+                </p>
+
+                <div class="p-3 rounded-3 mb-3" style="background-color: #0f172a; border: 1px solid #1e293b;">
+                    <div class="d-flex justify-content-between small mb-1">
+                        <span class="text-dim">Active Model:</span>
+                        <span class="text-white fw-semibold">{{ model_status.model_name }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between small mb-1">
+                        <span class="text-dim">Last Trained:</span>
+                        <span class="text-white fw-semibold">{{ model_status.trained_at }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between small">
+                        <span class="text-dim">Evaluation Recall:</span>
+                        <span class="text-success fw-bold">{{ "%.2f"|format(model_status.recall * 100) }}%</span>
+                    </div>
+                </div>
+            </div>
+
+            <form action="{{ url_for('train_model_route') }}" method="POST">
+                <button type="submit" class="btn btn-cyber-success w-100 py-2">
+                    <i class="fas fa-play me-2"></i> Retrain Model on Active Dataset
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% if has_data %}
+<!-- Dataset Summary Metrics -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="cyber-card py-3">
+            <div class="text-dim small mb-1">Active File</div>
+            <div class="text-white fw-bold text-truncate" title="{{ filename }}">{{ filename }}</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="cyber-card py-3">
+            <div class="text-dim small mb-1">Total Observations</div>
+            <div class="text-white fw-bold">{{ validation.row_count | number_format if validation.row_count is defined else validation.row_count }} Records</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="cyber-card py-3">
+            <div class="text-dim small mb-1">Total Columns</div>
+            <div class="text-white fw-bold">{{ validation.col_count }} Attributes</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="cyber-card py-3">
+            <div class="text-dim small mb-1">Data Quality</div>
+            {% if validation.total_missing == 0 %}
+            <div class="text-success fw-bold"><i class="fas fa-check-circle me-1"></i> Clean (0 Missing)</div>
+            {% else %}
+            <div class="text-warning fw-bold"><i class="fas fa-triangle-exclamation me-1"></i> {{ validation.total_missing }} Missing Values</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Validation Status & Schema Check -->
+<div class="cyber-card mb-4">
+    <div class="cyber-card-header">
+        <div class="cyber-card-title">
+            <i class="fas fa-clipboard-check"></i>
+            <span>Schema Validation & Target Class Verification</span>
+        </div>
+        {% if validation.is_valid %}
+        <span class="badge bg-success-subtle text-success">Valid Kaggle Schema</span>
+        {% else %}
+        <span class="badge bg-danger-subtle text-danger">Validation Issues</span>
+        {% endif %}
+    </div>
+
+    <div class="row g-3">
+        <div class="col-md-6">
+            <div class="p-3 rounded-3" style="background-color: #0f172a; border: 1px solid #1e293b;">
+                <h6 class="text-white small fw-bold mb-2">Target Label Status:</h6>
+                {% if validation.has_target %}
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="text-dim small">Legitimate Transactions (Class = 0):</span>
+                    <span class="badge-prediction genuine">{{ validation.genuine_count }}</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-dim small">Fraudulent Transactions (Class = 1):</span>
+                    <span class="badge-prediction fraud">{{ validation.fraud_count }} ({{ validation.fraud_rate }}%)</span>
+                </div>
+                {% else %}
+                <div class="text-warning small">
+                    <i class="fas fa-info-circle me-1"></i>
+                    No ground truth 'Class' column found. Predictions will operate in pure unsupervised/scoring mode.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="p-3 rounded-3" style="background-color: #0f172a; border: 1px solid #1e293b;">
+                <h6 class="text-white small fw-bold mb-2">Amount Summary Statistics:</h6>
+                {% if summary.amount_stats %}
+                <div class="row g-2 text-center">
+                    <div class="col-4">
+                        <div class="text-dim small">Average</div>
+                        <div class="text-white fw-bold">${{ "%.2f"|format(summary.amount_stats.overall_mean) }}</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="text-dim small">Median</div>
+                        <div class="text-white fw-bold">${{ "%.2f"|format(summary.amount_stats.overall_median) }}</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="text-dim small">Maximum</div>
+                        <div class="text-white fw-bold">${{ "%.2f"|format(summary.amount_stats.overall_max) }}</div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-dim small">No Amount column identified.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Preview First 10 Records Table -->
+<div class="cyber-card">
+    <div class="cyber-card-header">
+        <div class="cyber-card-title">
+            <i class="fas fa-table"></i>
+            <span>Preview First 10 Records</span>
+        </div>
+        <span class="text-dim small">Scroll horizontally to inspect all PCA features</span>
+    </div>
+
+    <div class="table-responsive" style="max-height: 480px;">
+        <table class="table-cyber text-nowrap">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    {% for col in columns %}
+                    <th>{{ col }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in preview_records %}
+                <tr>
+                    <td class="text-dim fw-bold">{{ loop.index }}</td>
+                    {% for col in columns %}
+                    <td>
+                        {% if col == 'Class' %}
+                            {% if row[col] == 1 %}
+                            <span class="badge-prediction fraud">1 (Fraud)</span>
+                            {% else %}
+                            <span class="badge-prediction genuine">0 (Genuine)</span>
+                            {% endif %}
+                        {% elif col == 'Amount' %}
+                            <span class="fw-bold text-white">${{ "%.2f"|format(row[col]) }}</span>
+                        {% else %}
+                            {{ row[col] }}
+                        {% endif %}
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endif %}
+{% endblock %}

@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Fraud Monitoring Overview{% endblock %} - FraudGuard AI</title>
+    
+    <!-- Google Fonts: Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- Custom Fintech Cybersecurity Styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<div class="app-container">
+    <!-- Sidebar Navigation -->
+    <aside class="app-sidebar">
+        <a href="{{ url_for('dashboard') }}" class="sidebar-brand">
+            <div class="brand-icon">
+                <i class="fas fa-shield-halved"></i>
+            </div>
+            <div>
+                <div class="brand-title">FraudGuard <span>AI</span></div>
+                <div class="brand-subtitle">Risk Intelligence System</div>
+            </div>
+        </a>
+
+        <div class="sidebar-nav">
+            <div class="nav-section-title">Core Operations</div>
+            
+            <a href="{{ url_for('dashboard') }}" class="sidebar-link {% if request.endpoint == 'dashboard' or request.path == '/' %}active{% endif %}">
+                <i class="fas fa-chart-pie"></i>
+                <span>Dashboard</span>
+            </a>
+
+            <a href="{{ url_for('dataset_management') }}" class="sidebar-link {% if request.endpoint == 'dataset_management' %}active{% endif %}">
+                <i class="fas fa-database"></i>
+                <span>Dataset Management</span>
+            </a>
+
+            <a href="{{ url_for('fraud_detection') }}" class="sidebar-link {% if request.endpoint in ['fraud_detection', 'transaction_details'] %}active{% endif %}">
+                <i class="fas fa-microchip"></i>
+                <span>Fraud Detection</span>
+            </a>
+
+            <div class="nav-section-title mt-2">Intelligence & Prevention</div>
+
+            <a href="{{ url_for('fraud_analysis') }}" class="sidebar-link {% if request.endpoint == 'fraud_analysis' %}active{% endif %}">
+                <i class="fas fa-shield-virus"></i>
+                <span>Analysis & Prevention</span>
+            </a>
+
+            <a href="{{ url_for('about_project') }}" class="sidebar-link {% if request.endpoint == 'about_project' %}active{% endif %}">
+                <i class="fas fa-circle-info"></i>
+                <span>About Project</span>
+            </a>
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="system-status-card">
+                <div class="d-flex align-items-center justify-content-between mb-1">
+                    <span class="text-dim">Engine Status</span>
+                    <span class="badge bg-success-subtle text-success border border-success-subtle" style="font-size: 0.65rem;">Active</span>
+                </div>
+                <div class="d-flex align-items-center justify-content-between">
+                    <span class="text-white fw-semibold" style="font-size: 0.72rem;">Random Forest (v1.0)</span>
+                    <span class="text-muted" style="font-size: 0.65rem;">Class Balanced</span>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content Container -->
+    <div class="app-main">
+        <!-- Top Navbar -->
+        <header class="app-topbar">
+            <div class="topbar-left">
+                <button class="btn btn-dark d-lg-none p-1 px-2 border-secondary" id="sidebarToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div>
+                    <div class="page-category">FINANCIAL FRAUD SURVEILLANCE</div>
+                    <div class="page-title">{% block header_title %}Fraud Monitoring Overview{% endblock %}</div>
+                </div>
+            </div>
+
+            <div class="topbar-right">
+                <!-- Dataset Status Pill -->
+                <div class="status-badge dataset-pill d-none d-md-inline-flex">
+                    <i class="fas fa-file-csv"></i>
+                    <span>{{ active_dataset_name }}</span>
+                    {% if active_dataset_rows > 0 %}
+                    <span class="opacity-75">({{ active_dataset_rows | number_format if active_dataset_rows is defined else active_dataset_rows }} tx)</span>
+                    {% endif %}
+                </div>
+
+                <!-- Model Status Badge -->
+                <div class="status-badge online pulse-dot d-none d-sm-inline-flex">
+                    <span>AI Engine Ready</span>
+                </div>
+
+                <!-- Live Test Modal Trigger -->
+                <button type="button" class="btn btn-cyber-primary btn-sm" data-bs-toggle="modal" data-bs-target="#singleTxModal">
+                    <i class="fas fa-bolt"></i>
+                    <span class="d-none d-sm-inline">Test Transaction</span>
+                </button>
+
+                <!-- Profile avatar placeholder -->
+                <div class="d-flex align-items-center gap-2 ps-2 border-start border-secondary">
+                    <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold" style="width: 34px; height: 34px; font-size: 0.78rem;">
+                        FG
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Flash Messages -->
+        <div class="px-4 pt-3">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show border-0 shadow-sm" role="alert" style="background-color: {% if category == 'success' %}#064e3b{% elif category == 'danger' %}#7f1d1d{% else %}#1f2937{% endif %}; color: #fff;">
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="fas {% if category == 'success' %}fa-circle-check text-success{% elif category == 'danger' %}fa-triangle-exclamation text-danger{% else %}fa-circle-info text-info{% endif %}"></i>
+                                <span>{{ message }}</span>
+                            </div>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+
+        <!-- Page Body Content -->
+        <main class="app-content">
+            {% block content %}{% endblock %}
+        </main>
+
+        <!-- Footer -->
+        <footer class="py-3 px-4 text-center border-top border-secondary-subtle" style="background-color: #0b0f19; font-size: 0.8rem; color: #6b7280;">
+            <div class="d-flex flex-wrap justify-content-between align-items-center">
+                <span>FraudGuard AI &copy; 2026 – Intelligent Credit Card Fraud Detection & Prevention System</span>
+                <span class="text-dim">Academic Mini Project Demonstration &bull; Department of Computer Science & Engineering</span>
+            </div>
+        </footer>
+    </div>
+</div>
+
+<!-- Single Transaction Live Testing Modal -->
+<div class="modal fade cyber-modal" id="singleTxModal" tabindex="-1" aria-labelledby="singleTxModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title d-flex align-items-center gap-2" id="singleTxModalLabel">
+                    <i class="fas fa-microchip text-primary"></i>
+                    <span>Real-Time Transaction Risk Evaluation</span>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="singleTxForm">
+                <div class="modal-body p-4">
+                    <p class="text-muted small mb-3">
+                        Test individual transaction parameters in real-time. Choose a preset transaction behavioral profile or enter custom PCA component values.
+                    </p>
+
+                    <!-- Preset Selector -->
+                    <div class="mb-4">
+                        <label class="form-label text-dim small fw-semibold">Quick Profile Preset:</label>
+                        <select class="form-cyber-input" id="presetSelect">
+                            <option value="custom">-- Select a Preset or Enter Custom --</option>
+                            <option value="genuine_sample">Standard Legitimate Retail Transaction ($42.80)</option>
+                            <option value="fraud_sample">High-Risk Fraud Vector ($485.50 - Severe Negative PCA V14/V12)</option>
+                            <option value="micro_fraud">Micro-Authorization Probe ($2.99 - Rapid Card Testing)</option>
+                        </select>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label text-dim small fw-semibold">Transaction Amount ($ USD)</label>
+                            <input type="number" step="0.01" class="form-cyber-input" id="inputAmount" value="85.00" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-dim small fw-semibold">PCA Feature V14 (Primary Indicator)</label>
+                            <input type="number" step="0.01" class="form-cyber-input" id="inputV14" value="-0.25" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label text-dim small fw-semibold">PCA Feature V12</label>
+                            <input type="number" step="0.01" class="form-cyber-input" id="inputV12" value="0.10" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label text-dim small fw-semibold">PCA Feature V10</label>
+                            <input type="number" step="0.01" class="form-cyber-input" id="inputV10" value="-0.05" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label text-dim small fw-semibold">PCA Feature V17</label>
+                            <input type="number" step="0.01" class="form-cyber-input" id="inputV17" value="-0.15" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-dim small fw-semibold">PCA Feature V4 (Positive Shift)</label>
+                            <input type="number" step="0.01" class="form-cyber-input" id="inputV4" value="0.20" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-dim small fw-semibold">PCA Feature V11 (Positive Shift)</label>
+                            <input type="number" step="0.01" class="form-cyber-input" id="inputV11" value="0.05" required>
+                        </div>
+                    </div>
+
+                    <!-- Prediction Result Container -->
+                    <div id="singleTxResult" class="mt-4 p-3 rounded-3 d-none" style="background-color: #0d1424; border: 1px solid #1f2e4d;">
+                        <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2 border-secondary">
+                            <div>
+                                <span class="text-dim small me-2">AI Assessment:</span>
+                                <span id="resPredictionBadge" class="badge-prediction genuine">Genuine</span>
+                            </div>
+                            <div>
+                                <span class="text-dim small me-2">Risk Category:</span>
+                                <span id="resRiskBadge" class="badge-risk low">Low Risk</span>
+                            </div>
+                            <div>
+                                <span class="text-dim small me-2">Probability:</span>
+                                <span id="resProbability" class="fw-bold text-white">0.0%</span>
+                            </div>
+                        </div>
+                        <div class="mb-2">
+                            <div class="text-dim small fw-semibold">Explainability Analysis:</div>
+                            <div id="resExplanation" class="text-light small mt-1"></div>
+                        </div>
+                        <div>
+                            <div class="text-dim small fw-semibold">Security Directive:</div>
+                            <div id="resRecommendation" class="text-info small mt-1"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-cyber-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-cyber-primary" id="btnSubmitTxTest">
+                        <i class="fas fa-microchip me-2"></i> Run AI Prediction
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap 5 Bundle JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Custom Client JS -->
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+
+{% block scripts %}{% endblock %}
+
+</body>
+</html>

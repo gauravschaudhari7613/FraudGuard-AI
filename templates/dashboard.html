@@ -1,0 +1,325 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Fraud Monitoring Overview{% endblock %}
+{% block header_title %}Fraud Monitoring Overview{% endblock %}
+
+{% block content %}
+{% if not has_data %}
+<!-- Empty State -->
+<div class="cyber-card empty-state">
+    <div class="empty-state-icon">
+        <i class="fas fa-database"></i>
+    </div>
+    <h3 class="text-white fw-bold mb-2">No Active Dataset Loaded</h3>
+    <p class="text-muted mx-auto mb-4" style="max-width: 520px;">
+        To activate fraud monitoring and intelligence analytics, load the built-in sample dataset or upload your own credit card transaction CSV.
+    </p>
+    <div class="d-flex justify-content-center gap-3">
+        <form action="{{ url_for('load_sample_dataset') }}" method="POST">
+            <button type="submit" class="btn btn-cyber-primary">
+                <i class="fas fa-play me-2"></i> Load Demo / Sample Dataset
+            </button>
+        </form>
+        <a href="{{ url_for('dataset_management') }}" class="btn btn-cyber-secondary">
+            <i class="fas fa-upload me-2"></i> Upload Custom CSV
+        </a>
+    </div>
+</div>
+{% else %}
+
+<!-- 1. Summary Statistic Cards -->
+<div class="row g-4 mb-4">
+    <!-- Card 1: Total Transactions -->
+    <div class="col-xl-3 col-md-6">
+        <div class="cyber-card stat-card blue h-100">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="stat-label">Total Transactions</div>
+                    <div class="stat-value">{{ summary.total_transactions | number_format if summary.total_transactions is defined else summary.total_transactions }}</div>
+                    <div class="stat-sub">
+                        <i class="fas fa-layer-group text-primary"></i>
+                        <span>Analyzed from dataset</span>
+                    </div>
+                </div>
+                <div class="p-3 rounded-3" style="background: rgba(59, 130, 246, 0.12); color: #3b82f6;">
+                    <i class="fas fa-receipt fs-4"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 2: Genuine Transactions -->
+    <div class="col-xl-3 col-md-6">
+        <div class="cyber-card stat-card green h-100">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="stat-label">Genuine Transactions</div>
+                    <div class="stat-value text-success">{{ summary.genuine_count }}</div>
+                    <div class="stat-sub">
+                        <i class="fas fa-check-circle text-success"></i>
+                        <span>{{ (100 - summary.fraud_rate) | round(2) }}% of total traffic</span>
+                    </div>
+                </div>
+                <div class="p-3 rounded-3" style="background: rgba(16, 185, 129, 0.12); color: #10b981;">
+                    <i class="fas fa-shield-check fs-4"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 3: Fraudulent Transactions -->
+    <div class="col-xl-3 col-md-6">
+        <div class="cyber-card stat-card red h-100">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="stat-label">Fraudulent Detected</div>
+                    <div class="stat-value text-danger">{{ summary.fraud_count }}</div>
+                    <div class="stat-sub">
+                        <i class="fas fa-triangle-exclamation text-danger"></i>
+                        <span>Flagged by ML Classifier</span>
+                    </div>
+                </div>
+                <div class="p-3 rounded-3" style="background: rgba(239, 68, 68, 0.12); color: #ef4444;">
+                    <i class="fas fa-shield-virus fs-4"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 4: Fraud Detection Rate -->
+    <div class="col-xl-3 col-md-6">
+        <div class="cyber-card stat-card purple h-100">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="stat-label">Fraud Detection Rate</div>
+                    <div class="stat-value text-purple" style="color: #a78bfa;">{{ summary.fraud_rate }}%</div>
+                    <div class="stat-sub">
+                        <i class="fas fa-chart-line text-purple" style="color: #a78bfa;"></i>
+                        <span>{{ summary.high_risk_count }} high-risk incidents</span>
+                    </div>
+                </div>
+                <div class="p-3 rounded-3" style="background: rgba(139, 92, 246, 0.12); color: #8b5cf6;">
+                    <i class="fas fa-percent fs-4"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 2. Charts Row: Distribution Doughnut & Activity Timeline -->
+<div class="row g-4 mb-4">
+    <!-- Doughnut Chart: Genuine vs Fraudulent -->
+    <div class="col-lg-4">
+        <div class="cyber-card h-100">
+            <div class="cyber-card-header">
+                <div class="cyber-card-title">
+                    <i class="fas fa-chart-pie"></i>
+                    <span>Traffic Classification</span>
+                </div>
+                <span class="badge bg-secondary-subtle text-secondary small">Doughnut</span>
+            </div>
+            <div style="height: 250px; position: relative;">
+                <canvas id="distributionChart"></canvas>
+            </div>
+            <div class="d-flex justify-content-around text-center pt-3 mt-2 border-top border-secondary-subtle">
+                <div>
+                    <div class="text-dim small">Legitimate</div>
+                    <div class="fw-bold text-success">{{ summary.genuine_count }}</div>
+                </div>
+                <div class="border-end border-secondary-subtle"></div>
+                <div>
+                    <div class="text-dim small">Fraudulent</div>
+                    <div class="fw-bold text-danger">{{ summary.fraud_count }}</div>
+                </div>
+                <div class="border-end border-secondary-subtle"></div>
+                <div>
+                    <div class="text-dim small">Ratio</div>
+                    <div class="fw-bold text-white">{{ summary.fraud_rate }}%</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Activity Timeline Chart -->
+    <div class="col-lg-8">
+        <div class="cyber-card h-100">
+            <div class="cyber-card-header">
+                <div class="cyber-card-title">
+                    <i class="fas fa-chart-column"></i>
+                    <span>Transaction Activity & Incident Velocity</span>
+                </div>
+                <span class="badge bg-secondary-subtle text-secondary small">Timeline Distribution</span>
+            </div>
+            <div style="height: 290px;">
+                <canvas id="activityChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 3. Fraud Insights & Key Incident Highlights -->
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="cyber-card p-4">
+            <div class="cyber-card-header mb-3">
+                <div class="cyber-card-title">
+                    <i class="fas fa-lightbulb"></i>
+                    <span>Operational Fraud Insights</span>
+                </div>
+                <span class="badge bg-info-subtle text-info">Real-Time Synthesis</span>
+            </div>
+            <div class="row g-3">
+                <!-- Insight 1: Most Suspicious -->
+                <div class="col-md-4">
+                    <div class="p-3 rounded-3" style="background-color: #0f172a; border: 1px solid #1e293b;">
+                        <div class="text-dim small mb-1">Most Suspicious Incident</div>
+                        {% if analytics.most_suspicious %}
+                        <div class="d-flex align-items-center justify-content-between">
+                            <span class="fw-bold text-danger">{{ analytics.most_suspicious.transaction_id }}</span>
+                            <span class="badge-risk high">{{ analytics.most_suspicious.probability }}% Fraud Prob</span>
+                        </div>
+                        <div class="small text-muted mt-2">
+                            Amount: <strong class="text-white">${{ "%.2f"|format(analytics.most_suspicious.amount) }}</strong>
+                            &bull;
+                            <a href="{{ url_for('transaction_details', row_index=analytics.most_suspicious.row_index) }}" class="text-info text-decoration-none">Inspect &rarr;</a>
+                        </div>
+                        {% else %}
+                        <div class="text-muted small">No fraud incidents detected.</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Insight 2: Average Fraud Amount -->
+                <div class="col-md-4">
+                    <div class="p-3 rounded-3" style="background-color: #0f172a; border: 1px solid #1e293b;">
+                        <div class="text-dim small mb-1">Average Fraud Amount</div>
+                        <div class="d-flex align-items-center justify-content-between">
+                            <span class="fw-bold text-white fs-5">${{ "%.2f"|format(summary.avg_fraud_amount) }}</span>
+                            <span class="text-dim small">vs ${{ "%.2f"|format(summary.avg_genuine_amount) }} genuine</span>
+                        </div>
+                        <div class="small text-muted mt-2">
+                            Total Suspicious Volume: <strong class="text-danger">${{ "%.2f"|format(summary.total_suspicious_amount) }}</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Insight 3: Risk Level Distribution -->
+                <div class="col-md-4">
+                    <div class="p-3 rounded-3" style="background-color: #0f172a; border: 1px solid #1e293b;">
+                        <div class="text-dim small mb-1">Threat Tier Distribution</div>
+                        <div class="d-flex align-items-center justify-content-between gap-2 mt-1">
+                            <span class="badge-risk high flex-fill text-center">{{ summary.high_risk_count }} High</span>
+                            <span class="badge-risk medium flex-fill text-center">{{ summary.med_risk_count }} Med</span>
+                            <span class="badge-risk low flex-fill text-center">{{ summary.low_risk_count }} Low</span>
+                        </div>
+                        <div class="small text-muted mt-2">
+                            Total Actionable Events: <strong class="text-white">{{ summary.high_risk_count + summary.med_risk_count }}</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 4. Recent Suspicious Transactions Table -->
+<div class="cyber-card">
+    <div class="cyber-card-header">
+        <div class="cyber-card-title">
+            <i class="fas fa-triangle-exclamation text-danger"></i>
+            <span>Recent High-Priority Suspicious Transactions</span>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('fraud_detection', filter='fraud') }}" class="btn btn-cyber-secondary btn-sm">
+                <span>View All Fraudulent</span>
+                <i class="fas fa-arrow-right ms-1"></i>
+            </a>
+        </div>
+    </div>
+
+    {% if recent_suspicious %}
+    <div class="table-responsive">
+        <table class="table-cyber">
+            <thead>
+                <tr>
+                    <th>Transaction ID</th>
+                    <th>Time Offset</th>
+                    <th>Amount ($)</th>
+                    <th>AI Classification</th>
+                    <th>Risk Probability</th>
+                    <th>Risk Category</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in recent_suspicious %}
+                <tr>
+                    <td class="fw-semibold text-white">
+                        <i class="fas fa-hashtag text-dim me-1"></i>
+                        {{ item.transaction_id }}
+                    </td>
+                    <td class="text-muted">{{ item.time }}s</td>
+                    <td class="fw-bold text-white">${{ "%.2f"|format(item.amount) }}</td>
+                    <td>
+                        {% if item.prediction == 'Fraudulent' %}
+                        <span class="badge-prediction fraud">
+                            <i class="fas fa-circle-exclamation"></i>
+                            Fraudulent
+                        </span>
+                        {% else %}
+                        <span class="badge-prediction genuine">
+                            <i class="fas fa-check-circle"></i>
+                            Genuine
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="progress flex-grow-1" style="height: 6px; background-color: #1e293b;">
+                                <div class="progress-bar bg-danger" style="width: {{ item.probability }}%;"></div>
+                            </div>
+                            <span class="small fw-semibold text-white" style="min-width: 45px;">{{ item.probability }}%</span>
+                        </div>
+                    </td>
+                    <td>
+                        {% if item.risk_level == 'High Risk' %}
+                        <span class="badge-risk high"><i class="fas fa-shield-xmark"></i> High Risk</span>
+                        {% elif item.risk_level == 'Medium Risk' %}
+                        <span class="badge-risk medium"><i class="fas fa-triangle-exclamation"></i> Medium Risk</span>
+                        {% else %}
+                        <span class="badge-risk low"><i class="fas fa-shield-check"></i> Low Risk</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end">
+                        <a href="{{ url_for('transaction_details', row_index=item.row_index) }}" class="btn btn-cyber-secondary btn-sm py-1 px-2">
+                            <span>Inspect</span>
+                            <i class="fas fa-chevron-right ms-1"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="text-center py-4 text-muted">
+        <i class="fas fa-shield-check fs-2 text-success mb-2"></i>
+        <div>No suspicious transactions detected in the loaded dataset.</div>
+    </div>
+    {% endif %}
+</div>
+
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if has_data and analytics %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const distData = {{ analytics.distribution_chart | tojson }};
+    const timelineData = {{ analytics.timeline_chart | tojson }};
+    initDashboardCharts(distData, timelineData);
+});
+</script>
+{% endif %}
+{% endblock %}

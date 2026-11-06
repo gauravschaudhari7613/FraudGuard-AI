@@ -1,0 +1,295 @@
+{% extends "base.html" %}
+
+{% block title %}Fraud Analysis & Prevention - FraudGuard AI{% endblock %}
+{% block header_title %}Pattern Intelligence & Prevention Strategies{% endblock %}
+
+{% block content %}
+{% if not has_data %}
+<div class="cyber-card empty-state">
+    <div class="empty-state-icon">
+        <i class="fas fa-shield-virus"></i>
+    </div>
+    <h3 class="text-white fw-bold mb-2">No Analytical Data Available</h3>
+    <p class="text-muted mx-auto mb-4" style="max-width: 520px;">
+        Please load or upload a transaction dataset to generate risk distributions and model evaluation analytics.
+    </p>
+    <form action="{{ url_for('load_sample_dataset') }}" method="POST">
+        <button type="submit" class="btn btn-cyber-primary">
+            <i class="fas fa-play me-2"></i> Load Demo / Sample Dataset
+        </button>
+    </form>
+</div>
+{% else %}
+
+<!-- 1. Key Pattern Metrics Row -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="cyber-card stat-card red h-100">
+            <div class="stat-label">Total Fraud Incidents</div>
+            <div class="stat-value text-danger">{{ summary.fraud_count }}</div>
+            <div class="stat-sub">
+                <i class="fas fa-percent text-danger"></i>
+                <span>{{ summary.fraud_rate }}% fraud contamination</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="cyber-card stat-card purple h-100">
+            <div class="stat-label">Avg Fraudulent Amount</div>
+            <div class="stat-value text-white">${{ "%.2f"|format(summary.avg_fraud_amount) }}</div>
+            <div class="stat-sub">
+                <i class="fas fa-scale-balanced text-primary"></i>
+                <span>vs ${{ "%.2f"|format(summary.avg_genuine_amount) }} legitimate</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="cyber-card stat-card blue h-100">
+            <div class="stat-label">Max Fraudulent Ticket</div>
+            <div class="stat-value text-white">${{ "%.2f"|format(analytics.amount_comparison.max_fraud) }}</div>
+            <div class="stat-sub">
+                <i class="fas fa-arrow-trend-up text-warning"></i>
+                <span>Peak unauthorized extraction</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="cyber-card stat-card green h-100">
+            <div class="stat-label">Threats Mitigated</div>
+            <div class="stat-value text-success">${{ "%.2f"|format(summary.total_suspicious_amount) }}</div>
+            <div class="stat-sub">
+                <i class="fas fa-shield-check text-success"></i>
+                <span>Flagged potential loss volume</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 2. Charts: Risk Tiers & Feature Importance -->
+<div class="row g-4 mb-4">
+    <!-- Risk Tiers Doughnut -->
+    <div class="col-lg-4">
+        <div class="cyber-card h-100">
+            <div class="cyber-card-header">
+                <div class="cyber-card-title">
+                    <i class="fas fa-chart-pie"></i>
+                    <span>Threat Tier Breakdown</span>
+                </div>
+                <span class="badge bg-secondary-subtle text-secondary small">Risk Clusters</span>
+            </div>
+            <div style="height: 250px;">
+                <canvas id="riskChart"></canvas>
+            </div>
+            <div class="row text-center pt-3 mt-2 border-top border-secondary-subtle">
+                <div class="col-4">
+                    <div class="text-dim small">High</div>
+                    <div class="fw-bold text-danger">{{ summary.high_risk_count }}</div>
+                </div>
+                <div class="col-4">
+                    <div class="text-dim small">Medium</div>
+                    <div class="fw-bold text-warning">{{ summary.med_risk_count }}</div>
+                </div>
+                <div class="col-4">
+                    <div class="text-dim small">Low</div>
+                    <div class="fw-bold text-success">{{ summary.low_risk_count }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Influential Features Bar Chart -->
+    <div class="col-lg-8">
+        <div class="cyber-card h-100">
+            <div class="cyber-card-header">
+                <div class="cyber-card-title">
+                    <i class="fas fa-ranking-star"></i>
+                    <span>Top Global Feature Importances (Random Forest)</span>
+                </div>
+                <span class="badge bg-primary-subtle text-primary small">Gini Impurity</span>
+            </div>
+            <div style="height: 280px;">
+                <canvas id="featureImportanceChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 3. Machine Learning Model Performance & Confusion Matrix -->
+{% if metadata and metadata.primary_model %}
+<div class="cyber-card mb-4">
+    <div class="cyber-card-header">
+        <div class="cyber-card-title">
+            <i class="fas fa-award text-warning"></i>
+            <span>Model Evaluation & Benchmark Metrics (Holdout Test Split)</span>
+        </div>
+        <span class="badge bg-info-subtle text-info small">Stratified 75/25 Holdout Validation</span>
+    </div>
+
+    <div class="row g-4 align-items-center">
+        <!-- Metric Cards -->
+        <div class="col-lg-7">
+            <div class="row g-3">
+                <div class="col-sm-4">
+                    <div class="p-3 rounded-3" style="background-color: #0f172a; border: 1px solid #1e293b;">
+                        <div class="text-dim small mb-1">Precision</div>
+                        <div class="text-white fw-bold fs-4">{{ "%.2f"|format(metadata.primary_model.precision * 100) }}%</div>
+                        <div class="text-dim" style="font-size: 0.72rem;">Minimizes false alarms</div>
+                    </div>
+                </div>
+                <div class="col-sm-4">
+                    <div class="p-3 rounded-3" style="background-color: #0f172a; border: 1px solid #1e293b;">
+                        <div class="text-dim small mb-1">Recall (Sensitivity)</div>
+                        <div class="text-success fw-bold fs-4">{{ "%.2f"|format(metadata.primary_model.recall * 100) }}%</div>
+                        <div class="text-dim" style="font-size: 0.72rem;">Catches genuine fraud</div>
+                    </div>
+                </div>
+                <div class="col-sm-4">
+                    <div class="p-3 rounded-3" style="background-color: #0f172a; border: 1px solid #1e293b;">
+                        <div class="text-dim small mb-1">F1-Score</div>
+                        <div class="text-primary fw-bold fs-4">{{ "%.2f"|format(metadata.primary_model.f1_score * 100) }}%</div>
+                        <div class="text-dim" style="font-size: 0.72rem;">Harmonic mean balance</div>
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="p-3 rounded-3" style="background-color: #0f172a; border: 1px solid #1e293b;">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="text-dim small mb-1">PR-AUC (Precision-Recall)</div>
+                                <div class="text-white fw-bold fs-4">{{ "%.2f"|format(metadata.primary_model.pr_auc * 100) }}%</div>
+                            </div>
+                            <i class="fas fa-chart-area fs-2 text-primary opacity-50"></i>
+                        </div>
+                        <div class="text-dim" style="font-size: 0.72rem; margin-top: 4px;">Primary benchmark for imbalanced fraud data</div>
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="p-3 rounded-3" style="background-color: #0f172a; border: 1px solid #1e293b;">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="text-dim small mb-1">ROC-AUC Score</div>
+                                <div class="text-white fw-bold fs-4">{{ "%.2f"|format(metadata.primary_model.roc_auc * 100) }}%</div>
+                            </div>
+                            <i class="fas fa-compass fs-2 text-info opacity-50"></i>
+                        </div>
+                        <div class="text-dim" style="font-size: 0.72rem; margin-top: 4px;">Area under Receiver Operating Characteristic</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Baseline Comparison -->
+            {% if metadata.baseline_model %}
+            <div class="mt-3 p-3 rounded-3" style="background-color: #0d1424; border: 1px solid #1f2e4d;">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-dim small fw-bold text-uppercase">Benchmark vs Baseline (Logistic Regression):</span>
+                    <span class="badge bg-secondary-subtle text-secondary small">Comparison</span>
+                </div>
+                <div class="row g-2 small text-muted">
+                    <div class="col-4">Recall: <strong class="text-white">{{ "%.2f"|format(metadata.baseline_model.recall * 100) }}%</strong></div>
+                    <div class="col-4">Precision: <strong class="text-white">{{ "%.2f"|format(metadata.baseline_model.precision * 100) }}%</strong></div>
+                    <div class="col-4">PR-AUC: <strong class="text-white">{{ "%.2f"|format(metadata.baseline_model.pr_auc * 100) }}%</strong></div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Confusion Matrix Box -->
+        <div class="col-lg-5">
+            <div class="p-3 rounded-3" style="background-color: #0f172a; border: 1px solid #1e293b;">
+                <h6 class="text-white small fw-bold mb-3 text-center text-uppercase letter-spacing">
+                    Confusion Matrix (Holdout Test Set)
+                </h6>
+                <div class="cm-grid">
+                    <div class="cm-cell true-negative">
+                        <div class="cm-cell-label text-success">True Negatives (TN)</div>
+                        <div class="cm-cell-value text-success">{{ metadata.primary_model.confusion_matrix.tn }}</div>
+                        <div class="cm-cell-sub">Legitimate correctly passed</div>
+                    </div>
+                    <div class="cm-cell false-alarm">
+                        <div class="cm-cell-label text-warning">False Positives (FP)</div>
+                        <div class="cm-cell-value text-warning">{{ metadata.primary_model.confusion_matrix.fp }}</div>
+                        <div class="cm-cell-sub">False alarms flagged</div>
+                    </div>
+                    <div class="cm-cell false-alarm">
+                        <div class="cm-cell-label text-danger">False Negatives (FN)</div>
+                        <div class="cm-cell-value text-danger">{{ metadata.primary_model.confusion_matrix.fn }}</div>
+                        <div class="cm-cell-sub">Missed fraud attempts</div>
+                    </div>
+                    <div class="cm-cell true-positive">
+                        <div class="cm-cell-label text-danger">True Positives (TP)</div>
+                        <div class="cm-cell-value text-danger">{{ metadata.primary_model.confusion_matrix.tp }}</div>
+                        <div class="cm-cell-sub">Fraud intercepted</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- 4. Fraud Prevention Recommendations Section -->
+<div class="cyber-card mb-4">
+    <div class="cyber-card-header">
+        <div class="cyber-card-title">
+            <i class="fas fa-shield-halved text-success"></i>
+            <span>Fraud Prevention Recommendations</span>
+        </div>
+        <span class="badge bg-success-subtle text-success">Cybersecurity Directives</span>
+    </div>
+
+    <p class="text-muted small mb-4">
+        Based on pattern recognition and banking cybersecurity standards, the following 7 proactive controls should be integrated into credit card transaction processing workflows:
+    </p>
+
+    <div class="row g-3">
+        {% for rec in recommendations %}
+        <div class="col-md-6">
+            <div class="p-3 rounded-3 h-100" style="background-color: #0f172a; border: 1px solid #1e293b;">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="p-2 rounded bg-dark border border-secondary text-primary">
+                            <i class="fas fa-{{ rec.icon }}"></i>
+                        </div>
+                        <h6 class="text-white fw-bold mb-0 small">{{ rec.id }}. {{ rec.title }}</h6>
+                    </div>
+                    <span class="badge bg-{{ rec.badge_color }}-subtle text-{{ rec.badge_color }} small">{{ rec.severity }}</span>
+                </div>
+                <p class="text-muted small mb-2">{{ rec.description }}</p>
+                <div class="p-2 rounded small" style="background-color: #131b2e; border: 1px solid #23304d;">
+                    <span class="text-info fw-semibold">Action Protocol:</span>
+                    <span class="text-dim">{{ rec.action }}</span>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- 5. Operational Disclaimer -->
+<div class="p-3 rounded-3" style="background-color: #121826; border: 1px solid #1f2d47;">
+    <div class="d-flex align-items-start gap-2">
+        <i class="fas fa-circle-exclamation text-warning mt-1"></i>
+        <div class="small text-muted">
+            <strong class="text-white">Operational Scope & Disclaimer:</strong>
+            FraudGuard AI performs offline predictive risk scoring and forensic feature attribution on uploaded tabular datasets. 
+            The system acts as a decision-support intelligence tool for risk analysts. It does not interface directly with live banking core engines, card networks (Visa/Mastercard), or automated payment settlement rails to decline real transactions.
+        </div>
+    </div>
+</div>
+
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if has_data and analytics and metadata %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const riskData = {{ analytics.risk_chart | tojson }};
+    const featureData = {{ metadata.top_feature_importances | tojson }};
+    initAnalysisCharts(riskData, featureData);
+});
+</script>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+
+{% block title %}Transaction {{ tx.Transaction_ID }} Details - FraudGuard AI{% endblock %}
+{% block header_title %}Transaction Forensic Analysis{% endblock %}
+
+{% block content %}
+
+<!-- Header & Quick Nav -->
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+    <div class="d-flex align-items-center gap-3">
+        <a href="{{ url_for('fraud_detection') }}" class="btn btn-cyber-secondary btn-sm">
+            <i class="fas fa-arrow-left me-1"></i> Back to Detection List
+        </a>
+        <h4 class="text-white fw-bold mb-0">Record: {{ tx.Transaction_ID }}</h4>
+    </div>
+    
+    <div class="d-flex gap-2">
+        {% if row_index > 0 %}
+        <a href="{{ url_for('transaction_details', row_index=row_index-1) }}" class="btn btn-cyber-secondary btn-sm">
+            <i class="fas fa-chevron-left me-1"></i> Previous
+        </a>
+        {% endif %}
+        {% if row_index < total_tx - 1 %}
+        <a href="{{ url_for('transaction_details', row_index=row_index+1) }}" class="btn btn-cyber-secondary btn-sm">
+            Next <i class="fas fa-chevron-right ms-1"></i>
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Transaction Overview Cards -->
+<div class="row g-4 mb-4">
+    <!-- Amount & Timestamp -->
+    <div class="col-md-3">
+        <div class="cyber-card py-3 h-100">
+            <div class="text-dim small mb-1">Transaction Value</div>
+            <div class="text-white fw-bold fs-3 mb-1">${{ "%.2f"|format(tx.Amount) }}</div>
+            <div class="small text-dim">
+                <i class="fas fa-clock me-1"></i> Time Offset: {{ tx.Time }}s
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Classification -->
+    <div class="col-md-3">
+        <div class="cyber-card py-3 h-100">
+            <div class="text-dim small mb-1">AI Classification</div>
+            <div class="mb-2">
+                {% if tx.Predicted_Class == 1 %}
+                <span class="badge-prediction fraud fs-6">
+                    <i class="fas fa-triangle-exclamation"></i> Fraudulent
+                </span>
+                {% else %}
+                <span class="badge-prediction genuine fs-6">
+                    <i class="fas fa-check-circle"></i> Legitimate
+                </span>
+                {% endif %}
+            </div>
+            {% if tx.Actual_Label != 'Unknown' %}
+            <div class="small text-muted">
+                Ground Truth: <strong class="text-white">{{ tx.Actual_Label }}</strong>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Fraud Probability -->
+    <div class="col-md-3">
+        <div class="cyber-card py-3 h-100">
+            <div class="text-dim small mb-1">Fraud Probability</div>
+            <div class="text-white fw-bold fs-3 mb-1">{{ tx.Fraud_Probability_Pct }}%</div>
+            <div class="progress" style="height: 6px; background-color: #1e293b;">
+                <div class="progress-bar {% if tx.Risk_Level == 'High Risk' %}bg-danger{% elif tx.Risk_Level == 'Medium Risk' %}bg-warning{% else %}bg-success{% endif %}" 
+                     style="width: {{ tx.Fraud_Probability_Pct }}%;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Risk Level -->
+    <div class="col-md-3">
+        <div class="cyber-card py-3 h-100">
+            <div class="text-dim small mb-1">Threat Assessment</div>
+            <div class="mb-2">
+                {% if tx.Risk_Level == 'High Risk' %}
+                <span class="badge-risk high fs-6"><i class="fas fa-shield-xmark"></i> High Risk</span>
+                {% elif tx.Risk_Level == 'Medium Risk' %}
+                <span class="badge-risk medium fs-6"><i class="fas fa-triangle-exclamation"></i> Medium Risk</span>
+                {% else %}
+                <span class="badge-risk low fs-6"><i class="fas fa-shield-check"></i> Low Risk</span>
+                {% endif %}
+            </div>
+            <div class="small text-dim">
+                Confidence: <strong class="text-white">High (Random Forest)</strong>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Explainable AI (XAI) Section -->
+<div class="cyber-card mb-4">
+    <div class="cyber-card-header">
+        <div class="cyber-card-title">
+            <i class="fas fa-brain text-primary"></i>
+            <span>Explainable AI: Why Was This Transaction Classified as {{ tx.Prediction }}?</span>
+        </div>
+        <span class="badge bg-primary-subtle text-primary">Feature Attribution</span>
+    </div>
+
+    <!-- Plain-Language Summary Box -->
+    <div class="p-3 rounded-3 mb-4" style="background-color: #0f172a; border-left: 4px solid {% if tx.Predicted_Class == 1 %}#ef4444{% else %}#10b981{% endif %};">
+        <div class="fw-semibold text-white mb-1">Model Synthesis:</div>
+        <p class="text-light small mb-2">{{ xai.summary }}</p>
+        <div class="fw-semibold text-info small">Security Directive:</div>
+        <div class="small text-muted">{{ xai.recommendation }}</div>
+    </div>
+
+    <!-- Top Influential Factors Cards -->
+    <h6 class="text-white small fw-bold text-uppercase letter-spacing mb-3">Top Influential Decision Factors:</h6>
+    <div class="row g-3 mb-4">
+        {% for factor in xai.top_factors %}
+        <div class="col-md-4 col-sm-6">
+            <div class="p-3 rounded-3 h-100" style="background-color: #0d1424; border: 1px solid #1f2e4d;">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="fw-bold text-white fs-6">{{ factor.feature }}</span>
+                    <span class="badge bg-secondary-subtle text-light small">{{ factor.importance }}% Global Wt</span>
+                </div>
+                <div class="d-flex justify-content-between small text-dim mb-1">
+                    <span>Observed Value:</span>
+                    <span class="text-white fw-semibold">{{ factor.value }}</span>
+                </div>
+                <div class="d-flex justify-content-between small text-dim mb-2">
+                    <span>Genuine Mean:</span>
+                    <span>{{ factor.baseline_mean }}</span>
+                </div>
+                <div class="p-2 rounded small" style="background-color: #131b2e; border: 1px solid #23304d;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-dim">Status:</span>
+                        <span class="fw-semibold {% if factor.direction == 'Abnormally High' or factor.direction == 'Abnormally Low' %}text-danger{% else %}text-success{% endif %}">
+                            {{ factor.direction }}
+                        </span>
+                    </div>
+                    <div class="text-muted" style="font-size: 0.72rem; margin-top: 2px;">
+                        {{ factor.description }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="text-dim small pt-2 border-top border-secondary-subtle">
+        <i class="fas fa-info-circle me-1"></i>
+        <span>{{ xai.methodology_note }}</span>
+    </div>
+</div>
+
+<!-- Full PCA Feature Inspection Grid -->
+<div class="cyber-card">
+    <div class="cyber-card-header">
+        <div class="cyber-card-title">
+            <i class="fas fa-network-wired"></i>
+            <span>Complete PCA Component Vector (V1 to V28)</span>
+        </div>
+        <span class="text-dim small">Confidential transformed financial telemetry</span>
+    </div>
+
+    <div class="row row-cols-2 row-cols-sm-4 row-cols-md-7 g-2 text-center">
+        {% for feat in v_features %}
+        <div class="col">
+            <div class="p-2 rounded-2" style="background-color: #0f172a; border: 1px solid #1e293b;">
+                <div class="text-dim small fw-semibold" style="font-size: 0.75rem;">{{ feat.name }}</div>
+                <div class="fw-bold {% if feat.value < -2.5 or feat.value > 2.5 %}text-warning{% else %}text-white{% endif %}" style="font-size: 0.85rem;">
+                    {{ feat.value }}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+{% endblock %}
